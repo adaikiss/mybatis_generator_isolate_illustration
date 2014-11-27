@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN" "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd" >
+<generatorConfiguration>
+	<properties resource="db.properties" />
+	<context id="publish" targetRuntime="MyBatis3"
+		defaultModelType="flat">
+		<property name="constructorBased" value="true" />
+		<!--sql keywords escape begin -->
+		<property name="autoDelimitKeywords" value="true" />
+		<property name="beginningDelimiter" value="`" />
+		<property name="endingDelimiter" value="`" />
+		<!--sql keywords escape end -->
+
+		<plugin type="org.mybatis.generator.plugins.RowBoundsPlugin"></plugin>
+		<plugin type="org.mybatis.generator.plugins.SerializablePlugin"></plugin>
+		<plugin type="org.mybatis.generator.plugins.ToStringPlugin"></plugin>
+		<plugin type="org.mybatis.generator.plugins.EqualsHashCodePlugin"></plugin>
+		<plugin type="org.mybatis.generator.plugins.CaseInsensitiveLikePlugin"></plugin>
+		<plugin type="com.example.mybatis.plugin.IsolateParentPlugin">
+			<property name="isolatePrefix" value="I" />
+		</plugin>
+
+		<!-- Where to pull the data from -->
+		<jdbcConnection driverClass="${db.driver}"
+			connectionURL="${db.url}" userId="${db.username}" password="${db.password}" />
+
+		<!-- Note that the targetProject refers to the name of the project in your 
+			Eclipse IDE (not the name of the Maven project). If run outside of the IDE 
+			you can specify a path instead, but there doesn't seem to be a nice way to 
+			specify a single path for both usage scenarios. -->
+
+		<!-- Generates the model (the objects that hold the data) -->
+		<javaModelGenerator targetPackage="com.example.domain" targetProject="MAVEN"></javaModelGenerator>
+		<sqlMapGenerator targetPackage="com.example.mapper" targetProject="MAVEN"></sqlMapGenerator>
+		<!-- Generates the interfaces used to retrieve data -->
+		<javaClientGenerator targetPackage="com.example.mapper"
+			type="XMLMAPPER" targetProject="MAVEN"/>
+
+		<!-- List of tables to inspect -->
+		<table tableName="user" alias="u">
+			<property name="isolate" value="true" />
+			<generatedKey column="id" sqlStatement="MySql" identity="true" />
+		</table>
+		<table tableName="role" alias="r">
+			<property name="isolate" value="true" />
+			<generatedKey column="id" sqlStatement="MySql" identity="true" />
+		</table>
+		<table tableName="permission" alias="p">
+			<property name="isolate" value="true" />
+			<generatedKey column="id" sqlStatement="MySql" identity="true" />
+		</table>
+		<table tableName="user_role" alias="ur">
+		</table>
+		<table tableName="role_permission" alias="rp">
+		</table>
+	</context>
+</generatorConfiguration>

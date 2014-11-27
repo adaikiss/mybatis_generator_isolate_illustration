@@ -4,3 +4,9 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 pom.xml.next
 release.properties
+/mybatis_generator_isolate_example/.settings
+/mybatis_generator_isolate_example/.classpath
+/mybatis_generator_isolate_example/.project
+/mybatis_generator_isolate_plugin/.settings
+/mybatis_generator_isolate_plugin/.classpath
+/mybatis_generator_isolate_plugin/.project

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.RoleMapper">
+	<resultMap id="ResultMapWithPerms" type="com.example.domain.Role"
+		extends="BaseResultMap">
+		<association column="r_id" property="perms" select="com.example.mapper.RoleMapper.selectByRoleId"/>
+	</resultMap>
+
+	<select id="selectByUserId" parameterType="java.lang.Long"
+		resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from user_role ur left join role r on ur.role_id = r.id where ur.user_id = #{id}
+	</select>
+
+	<select id="selectByUserIdWithPerms" parameterType="java.lang.Long"
+		resultMap="ResultMapWithPerms">
+		select
+		<include refid="Base_Column_List" />
+		from user_role ur left join role r on ur.role_id = r.id where ur.user_id = #{id}
+	</select>
+</mapper>
