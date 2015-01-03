@@ -11,13 +11,17 @@
 		<property name="endingDelimiter" value="`" />
 		<!--sql keywords escape end -->
 
-		<plugin type="org.mybatis.generator.plugins.RowBoundsPlugin"></plugin>
 		<plugin type="org.mybatis.generator.plugins.SerializablePlugin"></plugin>
 		<plugin type="org.mybatis.generator.plugins.ToStringPlugin"></plugin>
 		<plugin type="org.mybatis.generator.plugins.EqualsHashCodePlugin"></plugin>
 		<plugin type="org.mybatis.generator.plugins.CaseInsensitiveLikePlugin"></plugin>
+		<plugin type="com.example.mybatis.plugin.RowBoundsPlugin"></plugin>
 		<plugin type="com.example.mybatis.plugin.IsolateParentPlugin">
-			<property name="isolatePrefix" value="I" />
+			<property name="defaultIsolate" value="true" />
+			<property name="isolateSuffix" value="A"/>
+			<property name="clientParentReplacePackage" value="mapper|imapper"/>
+			<property name="exampleRootClass" value="com.example.base.domain.BaseExample" />
+			<property name="mapperRootInterface" value="com.example.base.mapper.BaseMapper" />
 		</plugin>
 
 		<!-- Where to pull the data from -->
@@ -38,20 +42,19 @@
 
 		<!-- List of tables to inspect -->
 		<table tableName="user" alias="u">
-			<property name="isolate" value="true" />
 			<generatedKey column="id" sqlStatement="MySql" identity="true" />
 		</table>
 		<table tableName="role" alias="r">
-			<property name="isolate" value="true" />
 			<generatedKey column="id" sqlStatement="MySql" identity="true" />
 		</table>
 		<table tableName="permission" alias="p">
-			<property name="isolate" value="true" />
 			<generatedKey column="id" sqlStatement="MySql" identity="true" />
 		</table>
 		<table tableName="user_role" alias="ur">
+			<property name="isolate" value="false" />
 		</table>
 		<table tableName="role_permission" alias="rp">
+			<property name="isolate" value="false" />
 		</table>
 	</context>
 </generatorConfiguration>

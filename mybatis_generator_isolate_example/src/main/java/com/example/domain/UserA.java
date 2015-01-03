@@ -9,7 +9,7 @@ import java.util.List;
  * @author hlw
  * 
  */
-public abstract class IUser {
+public abstract class UserA {
 	protected List<Role> roles;
 
 	public List<Role> getRoles() {

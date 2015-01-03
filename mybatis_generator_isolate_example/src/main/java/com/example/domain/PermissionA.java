@@ -7,6 +7,6 @@ package com.example.domain;
  * @author hlw
  *
  */
-public class IPermission {
+public class PermissionA {
 
 }

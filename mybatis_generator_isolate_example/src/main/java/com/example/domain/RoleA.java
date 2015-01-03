@@ -9,7 +9,7 @@ import java.util.List;
  * @author hlw
  *
  */
-public class IRole {
+public class RoleA {
 	protected List<Permission> perms;
 
 	public List<Permission> getPerms() {

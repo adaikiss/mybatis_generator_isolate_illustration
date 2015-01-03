@@ -3,11 +3,12 @@
  */
 package com.example;
 
-import com.example.domain.User;
-import com.example.mapper.UserMapper;
 import org.apache.ibatis.session.SqlSession;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.example.domain.User;
+import com.example.mapper.UserMapper;
 
 /**
  * @author hlw

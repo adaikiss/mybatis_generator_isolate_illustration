@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
@@ -24,6 +27,7 @@ import org.apache.ibatis.builder.CacheRefResolver;
 import org.apache.ibatis.builder.IncompleteElementException;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.apache.ibatis.builder.ResultMapResolver;
+import org.apache.ibatis.builder.xml.XMLMapperBuilder;
 import org.apache.ibatis.builder.xml.XMLMapperEntityResolver;
 import org.apache.ibatis.builder.xml.XMLStatementBuilder;
 import org.apache.ibatis.cache.Cache;
@@ -41,10 +45,9 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import com.example.utils.Config;
 
 /**
  * modified from {@link XMLMapperBuilder}
@@ -58,11 +61,19 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 	private MapperBuilderAssistant builderAssistant;
 	private Map<String, XNode> sqlFragments;
 	private String resource;
+	private DocumentBuilder documentBuilder;
 
 	public IsolateXMLMapperBuilder(InputStream inputStream, Configuration configuration, String resource,
 			Map<String, XNode> sqlFragments, String namespace) {
 		this(inputStream, configuration, resource, sqlFragments);
 		this.builderAssistant.setCurrentNamespace(namespace);
+		try {
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			this.documentBuilder = dbf.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public IsolateXMLMapperBuilder(InputStream inputStream, Configuration configuration, String resource,
@@ -78,29 +89,48 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 		this.parser = parser;
 		this.sqlFragments = sqlFragments;
 		this.resource = resource;
+		try {
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			this.documentBuilder = dbf.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void parse() {
 		if (!configuration.isResourceLoaded(resource)) {
 			XNode mapperNode = parser.evalNode("/mapper");
-			// <!-- modified
-			if (Config.getInstance().getMybatisIsolateMapperPackage() != null) {
+			// <!-- modified, package replacement mapper==>imapper
+			boolean isolate = true;
+			if (isolate) {
 				InputStream is = null;
 				try {
-					is = Resources.getResourceAsStream(resource.replace(Config.getInstance().getMybatisMapperPackage(),
-							Config.getInstance().getMybatisIsolateMapperPackage()));
+					is = Resources.getResourceAsStream(resource.replace("persistence",
+							"ipersistence"));
 				} catch (IOException e) {
 					// ignore, resource is not required
 				}
 				try {
 					if (is != null) {
 						XPath xpath = XPathFactory.newInstance().newXPath();
+						Document isDoc = documentBuilder.parse(is);
 						Document doc = mapperNode.getNode().getOwnerDocument();
-						NodeList nodes = (NodeList) xpath.evaluate("/mapper/*", new InputSource(is),
+						//ignore DTD
+						NodeList nodes = (NodeList) xpath.evaluate("/mapper/*", isDoc,
 								XPathConstants.NODESET);
 						int nodeCount = nodes.getLength();
+						Node generated = mapperNode.getNode();
 						for (int i = 0; i < nodeCount; i++) {
-							mapperNode.getNode().appendChild(doc.importNode(nodes.item(i), true));
+							//根据元素标签和ID替换或追加
+							Node node = doc.importNode(nodes.item(i), true);
+							Element nodeEl = (Element)node;
+							XNode exists = mapperNode.evalNode(nodeEl.getTagName() + "[@id='" + nodeEl.getAttribute("id") + "']");
+							if(exists!= null){
+								generated.replaceChild(node, exists.getNode());
+							}else{
+								generated.appendChild(node);
+							}
 						}
 					}
 				} catch (Exception e) {

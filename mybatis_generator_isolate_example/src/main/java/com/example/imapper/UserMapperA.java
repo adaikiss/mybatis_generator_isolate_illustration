@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.example.mapper;
+package com.example.imapper;
 
 import com.example.domain.User;
 
@@ -9,6 +9,6 @@ import com.example.domain.User;
  * @author hlw
  *
  */
-public interface IUserMapper {
+public interface UserMapperA {
 	public User selectByPrimaryKeyWithRoles(Long id);
 }
