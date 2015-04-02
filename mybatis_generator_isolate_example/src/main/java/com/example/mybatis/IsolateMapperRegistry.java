@@ -1,11 +1,5 @@
 package com.example.mybatis;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.ibatis.binding.BindingException;
 import org.apache.ibatis.binding.MapperProxyFactory;
 import org.apache.ibatis.binding.MapperRegistry;
@@ -13,8 +7,10 @@ import org.apache.ibatis.io.ResolverUtil;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 
+import java.util.*;
+
 /**
- * modified from {@link MapperRegistry}
+ * modified from {@link org.apache.ibatis.binding.MapperRegistry}
  * 
  * @author hlw
  * 

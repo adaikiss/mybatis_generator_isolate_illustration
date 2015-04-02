@@ -31,7 +31,9 @@ public class MyBatisUtil {
 		InputStream configIs = null;
 		try {
 			configIs = Resources.getResourceAsStream(MYBATIS_CONFIG_FILE);
-			sqlSessionFactory = new IsolateSqlSessionFactoryBuilder().build(configIs, Config.getInstance().getProps());
+            IsolateSqlSessionFactoryBuilder sqlSessionFactoryBuilder = new IsolateSqlSessionFactoryBuilder();
+            sqlSessionFactoryBuilder.setIsolateReplacement("mapper|imapper");
+			sqlSessionFactory = sqlSessionFactoryBuilder.build(configIs, Config.getInstance().getProps());
 			inited = true;
 		} catch (IOException e) {
 			logger.error("Initial SessionFactory creation failed.", e);

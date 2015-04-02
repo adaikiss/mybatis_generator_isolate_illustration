@@ -3,42 +3,14 @@
  */
 package com.example.mybatis;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-
-import org.apache.ibatis.builder.BaseBuilder;
-import org.apache.ibatis.builder.BuilderException;
-import org.apache.ibatis.builder.CacheRefResolver;
-import org.apache.ibatis.builder.IncompleteElementException;
-import org.apache.ibatis.builder.MapperBuilderAssistant;
-import org.apache.ibatis.builder.ResultMapResolver;
-import org.apache.ibatis.builder.xml.XMLMapperBuilder;
+import com.example.utils.NotFoundToDefaultMap;
+import org.apache.ibatis.builder.*;
 import org.apache.ibatis.builder.xml.XMLMapperEntityResolver;
 import org.apache.ibatis.builder.xml.XMLStatementBuilder;
 import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.executor.ErrorContext;
 import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.mapping.Discriminator;
-import org.apache.ibatis.mapping.ParameterMapping;
-import org.apache.ibatis.mapping.ParameterMode;
-import org.apache.ibatis.mapping.ResultFlag;
-import org.apache.ibatis.mapping.ResultMap;
-import org.apache.ibatis.mapping.ResultMapping;
+import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.parsing.XNode;
 import org.apache.ibatis.parsing.XPathParser;
 import org.apache.ibatis.session.Configuration;
@@ -49,8 +21,19 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.util.*;
+
 /**
- * modified from {@link XMLMapperBuilder}
+ * modified from {@link org.apache.ibatis.builder.xml.XMLMapperBuilder}
  * 
  * @author hlw
  * 
@@ -62,6 +45,8 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 	private Map<String, XNode> sqlFragments;
 	private String resource;
 	private DocumentBuilder documentBuilder;
+	public static String isolateReplaceSource;
+	public static String isolateReplaceDest;
 
 	public IsolateXMLMapperBuilder(InputStream inputStream, Configuration configuration, String resource,
 			Map<String, XNode> sqlFragments, String namespace) {
@@ -102,12 +87,11 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 		if (!configuration.isResourceLoaded(resource)) {
 			XNode mapperNode = parser.evalNode("/mapper");
 			// <!-- modified, package replacement mapper==>imapper
-			boolean isolate = true;
-			if (isolate) {
+			if (isolateReplaceSource != null) {
 				InputStream is = null;
 				try {
-					is = Resources.getResourceAsStream(resource.replace("persistence",
-							"ipersistence"));
+					is = Resources.getResourceAsStream(resource.replace(isolateReplaceSource,
+							isolateReplaceDest));
 				} catch (IOException e) {
 					// ignore, resource is not required
 				}
@@ -122,7 +106,7 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 						int nodeCount = nodes.getLength();
 						Node generated = mapperNode.getNode();
 						for (int i = 0; i < nodeCount; i++) {
-							//根据元素标签和ID替换或追加
+							//element tag name and id to determine replace or append
 							Node node = doc.importNode(nodes.item(i), true);
 							Element nodeEl = (Element)node;
 							XNode exists = mapperNode.evalNode(nodeEl.getTagName() + "[@id='" + nodeEl.getAttribute("id") + "']");
@@ -287,7 +271,7 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 				Class<?> javaTypeClass = resolveClass(javaType);
 				JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
 				@SuppressWarnings("unchecked")
-				Class<? extends TypeHandler<?>> typeHandlerClass = (Class<? extends TypeHandler<?>>) resolveClass(typeHandler);
+                Class<? extends TypeHandler<?>> typeHandlerClass = (Class<? extends TypeHandler<?>>) resolveClass(typeHandler);
 				ParameterMapping parameterMapping = builderAssistant.buildParameterMapping(parameterClass, property,
 						javaTypeClass, jdbcTypeEnum, resultMap, modeEnum, typeHandlerClass, numericScale);
 				parameterMappings.add(parameterMapping);
@@ -369,7 +353,7 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 		String typeHandler = context.getStringAttribute("typeHandler");
 		Class<?> javaTypeClass = resolveClass(javaType);
 		@SuppressWarnings("unchecked")
-		Class<? extends TypeHandler<?>> typeHandlerClass = (Class<? extends TypeHandler<?>>) resolveClass(typeHandler);
+        Class<? extends TypeHandler<?>> typeHandlerClass = (Class<? extends TypeHandler<?>>) resolveClass(typeHandler);
 		JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
 		Map<String, String> discriminatorMap = new HashMap<String, String>();
 		for (XNode caseChild : context.getChildren()) {
@@ -378,8 +362,15 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 					processNestedResultMappings(caseChild, resultMappings));
 			discriminatorMap.put(value, resultMap);
 		}
-		return builderAssistant.buildDiscriminator(resultType, column, javaTypeClass, jdbcTypeEnum, typeHandlerClass,
+		Discriminator discr = builderAssistant.buildDiscriminator(resultType, column, javaTypeClass, jdbcTypeEnum, typeHandlerClass,
 				discriminatorMap);
+		Field discriminatorMapField = discr.getClass().getDeclaredField("discriminatorMap");
+		discriminatorMapField.setAccessible(true);
+		@SuppressWarnings("unchecked")
+        NotFoundToDefaultMap<String, String> nftdm = new NotFoundToDefaultMap<String, String>((Map<String, String>)discriminatorMapField.get(discr), "");
+		discriminatorMapField.set(discr, nftdm);
+		discriminatorMapField.setAccessible(false);
+		return discr;
 	}
 
 	private void sqlElement(List<XNode> list) throws Exception {
@@ -438,7 +429,7 @@ public class IsolateXMLMapperBuilder extends BaseBuilder {
 				configuration.isLazyLoadingEnabled() ? "lazy" : "eager"));
 		Class<?> javaTypeClass = resolveClass(javaType);
 		@SuppressWarnings("unchecked")
-		Class<? extends TypeHandler<?>> typeHandlerClass = (Class<? extends TypeHandler<?>>) resolveClass(typeHandler);
+        Class<? extends TypeHandler<?>> typeHandlerClass = (Class<? extends TypeHandler<?>>) resolveClass(typeHandler);
 		JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
 		return builderAssistant.buildResultMapping(resultType, property, column, javaTypeClass, jdbcTypeEnum,
 				nestedSelect, nestedResultMap, notNullColumn, columnPrefix, typeHandlerClass, flags, resulSet,

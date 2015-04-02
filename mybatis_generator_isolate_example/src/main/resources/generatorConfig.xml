@@ -17,13 +17,15 @@
 		<plugin type="org.mybatis.generator.plugins.CaseInsensitiveLikePlugin"></plugin>
 		<plugin type="com.example.mybatis.plugin.RowBoundsPlugin"></plugin>
 		<plugin type="com.example.mybatis.plugin.IsolateParentPlugin">
-			<property name="defaultIsolate" value="true" />
-			<property name="isolateSuffix" value="A"/>
-			<property name="clientParentReplacePackage" value="mapper|imapper"/>
+			<property name="defaultIsolate" value="none" />
+            <property name="modelParentReplacePackage" value="domain|idomain"/>
+            <property name="clientParentReplacePackage" value="mapper|imapper"/>
 			<property name="exampleRootClass" value="com.example.base.domain.BaseExample" />
-			<property name="mapperRootInterface" value="com.example.base.mapper.BaseMapper" />
+			<property name="clientRootInterface" value="com.example.base.mapper.BaseMapper" />
 		</plugin>
-
+        <commentGenerator>
+            <property name="suppressDate" value="true" />
+        </commentGenerator>
 		<!-- Where to pull the data from -->
 		<jdbcConnection driverClass="${db.driver}"
 			connectionURL="${db.url}" userId="${db.username}" password="${db.password}" />
@@ -42,19 +44,20 @@
 
 		<!-- List of tables to inspect -->
 		<table tableName="user" alias="u">
+            <property name="isolate" value="all" />
 			<generatedKey column="id" sqlStatement="MySql" identity="true" />
 		</table>
 		<table tableName="role" alias="r">
+            <property name="isolate" value="all" />
 			<generatedKey column="id" sqlStatement="MySql" identity="true" />
 		</table>
 		<table tableName="permission" alias="p">
+            <property name="isolate" value="client" />
 			<generatedKey column="id" sqlStatement="MySql" identity="true" />
 		</table>
 		<table tableName="user_role" alias="ur">
-			<property name="isolate" value="false" />
 		</table>
 		<table tableName="role_permission" alias="rp">
-			<property name="isolate" value="false" />
 		</table>
 	</context>
 </generatorConfiguration>

@@ -11,6 +11,6 @@ import com.example.domain.Permission;
  * @author hlw
  *
  */
-public interface PermissionMapperA {
+public interface PermissionMapper {
 	List<Permission> selectByRoleId(Long id);
 }

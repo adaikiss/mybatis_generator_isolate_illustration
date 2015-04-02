@@ -14,23 +14,61 @@ import org.mybatis.generator.api.dom.java.TopLevelClass;
 import org.mybatis.generator.config.ModelType;
 
 /**
+ * isolate user code from mybatis generated code through parent classes.
  * @author hlw
  * 
  */
 public class IsolateParentPlugin extends PluginAdapter {
 
+    enum IsolateType{
+        None, All, Client, Model;
+        static{
+            All.isolateModel = true;
+            All.isolateClient = true;
+            Client.isolateClient = true;
+            Model.isolateModel = true;
+        }
+        private boolean isolateModel = false;
+        private boolean isolateClient = false;
+        public boolean isIsolateModel(){
+            return isolateModel;
+        }
+
+        public boolean isIsolateClient(){
+            return isolateClient;
+        }
+
+        public static IsolateType fromText(String text){
+            if(text == null || text.trim().equals("")){
+                return None;
+            }
+            if("true".equalsIgnoreCase(text) || "all".equalsIgnoreCase(text)){
+                return All;
+            }
+            if("false".equalsIgnoreCase(text) || "none".equalsIgnoreCase(text)){
+                return None;
+            }
+            if("client".equalsIgnoreCase(text)){
+                return Client;
+            }
+            if("model".equalsIgnoreCase(text)){
+                return Model;
+            }
+            throw new RuntimeException("Unknown isolate type:" + text);
+        }
+    }
 	private String prefix;
 	private String suffix;
 	private String modelPackageToReplace;
 	private String modelPackageReplace;
 	private String clientPackageReplace;
 	private String clientPackageToReplace;
-	private boolean defaultIsolate;
-	private boolean isolate = false;
+	private IsolateType defaultIsolate;
+	private IsolateType isolate = IsolateType.None;
 	private boolean hasPrimaryKeyClass;
 
 	private String exampleRootClassName;
-	private String mapperRootClassName;
+	private String clientRootClassName;
 
 	public IsolateParentPlugin() {
 	}
@@ -52,9 +90,9 @@ public class IsolateParentPlugin extends PluginAdapter {
 			this.clientPackageToReplace = split[0];
 			this.clientPackageReplace = split[1];
 		}
-		defaultIsolate = Boolean.valueOf(properties.getProperty("defaultIsolate", "false"));
+		defaultIsolate = IsolateType.fromText(properties.getProperty("defaultIsolate"));
 		exampleRootClassName = properties.getProperty("exampleRootClass");
-		mapperRootClassName = properties.getProperty("mapperRootInterface");
+        clientRootClassName = properties.getProperty("clientRootInterface");
 	}
 
 	@Override
@@ -64,10 +102,10 @@ public class IsolateParentPlugin extends PluginAdapter {
 
 	@Override
 	public void initialized(IntrospectedTable introspectedTable) {
-		this.isolate = false;
+		this.isolate = IsolateType.None;
 		String isolateStr = introspectedTable.getTableConfiguration().getProperty("isolate");
 		if (null != isolateStr && isolateStr.trim().length() > 0) {
-			isolate = Boolean.valueOf(isolateStr);
+			isolate = IsolateType.fromText(isolateStr);
 		}else{
 			isolate = defaultIsolate;
 		}
@@ -77,7 +115,7 @@ public class IsolateParentPlugin extends PluginAdapter {
 
 	@Override
 	public boolean modelBaseRecordClassGenerated(TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
-		if (isolate && !hasPrimaryKeyClass) {
+		if (isolate.isIsolateModel() && !hasPrimaryKeyClass) {
 			addModelIsolateParent(topLevelClass, introspectedTable);
 		}
 		return super.modelBaseRecordClassGenerated(topLevelClass, introspectedTable);
@@ -85,7 +123,7 @@ public class IsolateParentPlugin extends PluginAdapter {
 
 	@Override
 	public boolean modelPrimaryKeyClassGenerated(TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
-		if (isolate) {
+		if (isolate.isIsolateModel()) {
 			addModelIsolateParent(topLevelClass, introspectedTable);
 		}
 		return super.modelPrimaryKeyClassGenerated(topLevelClass, introspectedTable);
@@ -101,15 +139,15 @@ public class IsolateParentPlugin extends PluginAdapter {
 
 	@Override
 	public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
-		if (isolate) {
+		if (isolate.isIsolateClient()) {
 			FullyQualifiedJavaType clientSuperClass = new FullyQualifiedJavaType(makeClientParentClass(interfaze.getType()));
 			interfaze.addSuperInterface(clientSuperClass);
-			if(clientPackageToReplace != null){
+			if(clientPackageToReplace != null && !clientSuperClass.getShortName().equals(interfaze.getType().getShortName())){
 				interfaze.addImportedType(clientSuperClass);
 			}
 		}
-		if(mapperRootClassName != null){
-			FullyQualifiedJavaType mapperRootClass = new FullyQualifiedJavaType(mapperRootClassName);
+		if(clientRootClassName != null){
+			FullyQualifiedJavaType mapperRootClass = new FullyQualifiedJavaType(clientRootClassName);
 			mapperRootClass.addTypeArgument(new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()));
 			interfaze.addSuperInterface(mapperRootClass);
 			interfaze.addImportedType(mapperRootClass);
@@ -118,9 +156,9 @@ public class IsolateParentPlugin extends PluginAdapter {
 	}
 
 	protected void addModelIsolateParent(TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
-		String superClass = makeModelParentClass(topLevelClass.getType());
+		FullyQualifiedJavaType superClass = new FullyQualifiedJavaType(makeModelParentClass(topLevelClass.getType()));
 		topLevelClass.setSuperClass(superClass);
-		if(modelPackageToReplace != null){
+		if(modelPackageToReplace != null && !topLevelClass.getType().getShortName().equals(superClass.getShortName())){
 			topLevelClass.addImportedType(superClass);
 		}
 	}

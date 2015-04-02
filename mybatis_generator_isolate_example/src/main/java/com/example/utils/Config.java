@@ -18,8 +18,6 @@ public class Config {
 	private String password;
 	private String driver;
 	private String url;
-	private String mybatisMapperPackage;
-	private String mybatisIsolateMapperPackage;
 	private Properties props;
 	private Config(){
 		load();
@@ -32,14 +30,6 @@ public class Config {
 			this.password = props.getProperty("db.password");
 			this.driver = props.getProperty("db.driver");
 			this.url = props.getProperty("db.url");
-			this.mybatisIsolateMapperPackage = props.getProperty("mybatis.isolate_mapper_package");
-			if(null != mybatisIsolateMapperPackage){
-				mybatisIsolateMapperPackage = mybatisIsolateMapperPackage.replace('.', '/');
-			}
-			this.mybatisMapperPackage = props.getProperty("mybatis.mapper_package");
-			if(null != mybatisMapperPackage){
-				mybatisMapperPackage = mybatisMapperPackage.replace('.', '/');
-			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -82,22 +72,6 @@ public class Config {
 
 	public void setUrl(String url) {
 		this.url = url;
-	}
-
-	public String getMybatisIsolateMapperPackage() {
-		return mybatisIsolateMapperPackage;
-	}
-
-	public void setMybatisIsolateMapperPackage(String mybatisIsolateMapperPackage) {
-		this.mybatisIsolateMapperPackage = mybatisIsolateMapperPackage;
-	}
-
-	public String getMybatisMapperPackage() {
-		return mybatisMapperPackage;
-	}
-
-	public void setMybatisMapperPackage(String mybatisMapperPackage) {
-		this.mybatisMapperPackage = mybatisMapperPackage;
 	}
 
 	public Properties getProps() {

@@ -9,6 +9,6 @@ import com.example.domain.User;
  * @author hlw
  *
  */
-public interface UserMapperA {
+public interface UserMapper {
 	public User selectByPrimaryKeyWithRoles(Long id);
 }

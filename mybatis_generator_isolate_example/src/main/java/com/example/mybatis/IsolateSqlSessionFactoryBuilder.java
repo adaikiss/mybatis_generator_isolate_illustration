@@ -3,22 +3,22 @@
  */
 package com.example.mybatis;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.lang.reflect.Field;
-import java.util.Properties;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.builder.xml.XMLConfigBuilder;
 import org.apache.ibatis.exceptions.ExceptionFactory;
 import org.apache.ibatis.executor.ErrorContext;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
-import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.lang.reflect.Field;
+import java.util.Properties;
 
 /**
- * modified from {@link SqlSessionFactoryBuilder}
+ * modified from {@link org.apache.ibatis.session.SqlSessionFactoryBuilder}
  * 
  * @author hlw
  * 
@@ -88,6 +88,37 @@ public class IsolateSqlSessionFactoryBuilder extends SqlSessionFactoryBuilder {
 	}
 
 	public SqlSessionFactory build(Configuration config) {
-		return new DefaultSqlSessionFactory(config);
+		try {
+			//modify mapperRegistry
+			Field field = Configuration.class.getDeclaredField("mapperRegistry");
+			field.setAccessible(true);
+            Object oldMapperRegistry = field.get(config);
+            //do not set twice!
+            if(!IsolateMapperRegistry.class.isAssignableFrom(oldMapperRegistry.getClass())){
+                field.set(config, new IsolateMapperRegistry(config));
+            }
+			field.setAccessible(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		// -->
+        //use PaginationSqlSessionFactory(for PaginationSqlSession) to handle rowBounds
+		return new PaginationSqlSessionFactory(config);
+	}
+
+    /**
+     *
+     * @param str isolateReplaceSource|isolateReplaceDest
+     */
+	public void setIsolateReplacement(String str){
+		if(StringUtils.isBlank(str)){
+			return;
+		}
+		String[] tuple = str.split("\\|");
+		if(tuple.length != 2){
+			throw new RuntimeException("isolateReplacement property should be two string concated with |");
+		}
+		IsolateXMLMapperBuilder.isolateReplaceSource = tuple[0];
+		IsolateXMLMapperBuilder.isolateReplaceDest = tuple[1];
 	}
 }

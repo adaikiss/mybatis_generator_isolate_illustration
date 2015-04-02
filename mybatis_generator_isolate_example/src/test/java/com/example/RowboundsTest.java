@@ -33,10 +33,11 @@ public class RowboundsTest extends MyBatisTestCase {
 		session.close();
 	}
 
-	@Test(expected = PersistenceException.class)
+	@Test
 	public void testMissingRowbounds() {
 		SqlSession session = sqlSessionFactory.openSession();
 		UserMapper mapper = session.getMapper(UserMapper.class);
-		mapper.selectByExample(new UserExample(), null);
+		List<User> list = mapper.selectByExample(new UserExample(), null);
+        Assert.assertEquals(6, list.size());
 	}
 }

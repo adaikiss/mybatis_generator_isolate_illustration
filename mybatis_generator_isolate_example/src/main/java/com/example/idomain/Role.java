@@ -1,7 +1,9 @@
 /**
  * 
  */
-package com.example.domain;
+package com.example.idomain;
+
+import com.example.domain.Permission;
 
 import java.util.List;
 
@@ -9,7 +11,7 @@ import java.util.List;
  * @author hlw
  *
  */
-public class RoleA {
+public class Role {
 	protected List<Permission> perms;
 
 	public List<Permission> getPerms() {
